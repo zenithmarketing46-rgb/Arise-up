@@ -37,10 +37,14 @@ export function AppProvider({ children }) {
   const soundRef = useRef(true);
 
   useEffect(() => {
-    MobileAds().initialize();
     loadSettings();
     initUserData();
     requestAndSetupNotifications();
+    // Initialize AdMob after a short delay to avoid race condition on startup
+    const timer = setTimeout(() => {
+      try { MobileAds().initialize(); } catch {}
+    }, 2000);
+    return () => clearTimeout(timer);
   }, []);
 
   const initUserData = async () => {
@@ -130,14 +134,11 @@ export function AppProvider({ children }) {
   const scheduleEvery2Hours = async () => {
     try {
       await Notifications.cancelAllScheduledNotificationsAsync();
-      const hours = [8, 10, 12, 14, 16, 18, 20, 22];
-      for (let i = 0; i < hours.length; i++) {
-        const quote = SL_QUOTES_NOTIF[i % SL_QUOTES_NOTIF.length];
-        await Notifications.scheduleNotificationAsync({
-          content: { title: quote.title, body: quote.body, sound: true },
-          trigger: { hour: hours[i], minute: 0, repeats: true },
-        });
-      }
+      const quote = SL_QUOTES_NOTIF[Math.floor(Math.random() * SL_QUOTES_NOTIF.length)];
+      await Notifications.scheduleNotificationAsync({
+        content: { title: quote.title, body: quote.body, sound: true },
+        trigger: { seconds: 7200, repeats: true },
+      });
     } catch {}
   };
 
