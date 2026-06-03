@@ -250,8 +250,12 @@ function TaskCard({ task, onToggle, theme }) {
   );
 }
 
-const interstitial = InterstitialAd.createForAdRequest(AD_UNITS.interstitial, { requestNonPersonalizedAdsOnly: false });
-const rewarded = RewardedAd.createForAdRequest(AD_UNITS.rewarded, { requestNonPersonalizedAdsOnly: false });
+let interstitial = null;
+let rewarded = null;
+try {
+  interstitial = InterstitialAd.createForAdRequest(AD_UNITS.interstitial, { requestNonPersonalizedAdsOnly: false });
+  rewarded = RewardedAd.createForAdRequest(AD_UNITS.rewarded, { requestNonPersonalizedAdsOnly: false });
+} catch {}
 
 export default function HomeScreen() {
   const { theme, triggerHaptic, playSound } = useAppContext();
@@ -274,6 +278,7 @@ export default function HomeScreen() {
   const cinzelBold = fontsLoaded ? 'CinzelDecorative_700Bold' : 'System';
 
   useEffect(() => {
+    if (!rewarded) return () => {};
     const unsubLoaded = rewarded.addAdEventListener(RewardedAdEventType.LOADED, () => setRewardedLoaded(true));
     const unsubEarned = rewarded.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
       const grantBonusXP = async () => {
@@ -296,6 +301,7 @@ export default function HomeScreen() {
   }, []);
 
   const showRewardedAd = () => {
+    if (!rewarded) return;
     if (rewardedLoaded) rewarded.show();
     else rewarded.load();
   };
@@ -395,9 +401,9 @@ export default function HomeScreen() {
       setCurrentQuote(SL_QUOTES[Math.floor(Math.random() * SL_QUOTES.length)]);
       triggerHaptic('success');
       playSound('complete');
-      interstitial.addAdEventListener(AdEventType.LOADED, () => interstitial.show());
-      interstitial.addAdEventListener(AdEventType.ERROR, () => {});
-      interstitial.load();
+      interstitial?.addAdEventListener(AdEventType.LOADED, () => interstitial?.show());
+      interstitial?.addAdEventListener(AdEventType.ERROR, () => {});
+      interstitial?.load();
       // Only show level up modal if user actually leveled up
       if (u.level > prevLevel) {
         setTimeout(() => {
